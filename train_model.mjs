@@ -1,5 +1,5 @@
 import fs from 'fs'
-import tf from '@tensorflow/tfjs-node-gpu'
+import *  as tf from '@tensorflow/tfjs-node'
 
 const IMAGE_SIZE=64
 
@@ -17,7 +17,7 @@ const loadImageFromFolder=async(folder)=>{
         const tensor =tf.node.decodeImage(imageBuffer ,3)
         .resizeNearestNeighbor([IMAGE_SIZE, IMAGE_SIZE])    // 300 x 300 pixel karta etc
         .toFloat()   // point ma convert karta hain
-        .expandDims()  // Tensor mein ek extra dimension add karta hai, jo batch dimension hota hai. (1,255,255 ,3)
+        .expandDims(0)  // Tensor mein ek extra dimension add karta hai, jo batch dimension hota hai. (1,255,255 ,3)
         .div(255.0)       //Har pixel value ko 255.0 se divide karta hai.
         images.push(tensor)
     }
@@ -26,16 +26,19 @@ const loadImageFromFolder=async(folder)=>{
 
 const createmodel=()=>{
     const model=tf.sequential();   // Simple aur Linear Model Banane ke Liye
+ 
+ 
     model.add(tf.layers.conv2d({ 
       filters:32,             //Filters: Features detect karte hain (edges, textures, etc.).  32 k mtlb hain k 32 apply hoga etc
      kernelSize:3,          //Kernel (3x3): Image ke small regions par kaam karta hai.
       activation:`relu`,     //ReLU: Negative values ko 0 banata hai. example -3 hain tu is ko 0 bana dain ga
-     inputShape:[IMAGE_SIZE,IMAGE_SIZE, 3],    //Output Shape: Tumhara image depth badh jata hai filters ke count ke according.
+          //Output Shape: Tumhara image depth badh jata hai filters ke count ke according.
     }));
  model.add(tf.layers.maxPool2d({
     poolSize:2      //Max pooling ka kaam hai size reduce karna aur strong features retain karna. 
                    // poolSize: 2 ka matlab hai har 2x2 ka block consider karega, aur maximum value select karega.
  }))
+
 
 
 model.add(tf.layers.conv2d({ 
@@ -75,7 +78,7 @@ return model;
 
 
 
-const trianModel=async()=>{
+const trainModel=async()=>{
  const beginImages=await loadImageFromFolder(`${TRAING_DATA}/benign`);
  const malignantImages=await loadImageFromFolder(`${TRAING_DATA}/malignant`)
  const x=tf.concat([...beginImages,...malignantImages])
